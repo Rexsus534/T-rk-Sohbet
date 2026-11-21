@@ -1,857 +1,1323 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Türk Sohbet</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Türk Sohbet</title>
 
-<script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.170.0/three.module.js"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.170.0/three.module.js"
+      }
+    }
+    </script>
 
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{overflow:hidden;background:#87b9e8;font-family:Arial,sans-serif;color:white;touch-action:none}
-#game{position:fixed;inset:0}
-#hud{position:fixed;inset:0;pointer-events:none}
-#logo{position:absolute;top:18px;left:20px;font-size:24px;font-weight:900;text-shadow:0 2px 8px #0008}
-#logo span{color:#65e1ff}
-#online{position:absolute;top:20px;right:18px;background:#121b2add;padding:11px 15px;border-radius:12px;font-size:13px}
-#crosshair{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;background:white;transform:translate(-50%,-50%)}
-#hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:#111b2ad9;padding:11px 16px;border-radius:12px;font-size:12px;white-space:nowrap}
-#chat{position:absolute;bottom:62px;left:18px;width:min(340px,90vw);pointer-events:auto}
-#messages{height:155px;overflow-y:auto;padding:10px;background:linear-gradient(transparent,#101827dd);font-size:13px;overflow-wrap:anywhere;touch-action:pan-y}
-#chatform{display:flex;gap:6px;margin-top:5px}
-#chatinput{flex:1;min-width:0;padding:12px;border:1px solid #ffffff22;background:#111b2af2;color:white;border-radius:10px;outline:none;font-size:14px}
-#send{padding:0 14px;border:0;border-radius:10px;background:#42b7ec;color:#07131b;font-weight:bold}
-#chatToggle{position:absolute;bottom:235px;left:18px;pointer-events:auto;padding:10px 15px;border:0;border-radius:10px;background:#172235dd;color:white}
-#chat.closed #messages,#chat.closed #chatform{display:none}
-#chat.closed{width:auto}
-#chat.closed #chatToggle{position:static}
-#start{position:fixed;inset:0;background:#101827dd;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:auto;padding:15px}
-#box{width:min(390px,95vw);background:#172235;border:1px solid #ffffff20;border-radius:22px;padding:26px;text-align:center;box-shadow:0 20px 70px #0008}
-#box h1{font-size:29px;margin-bottom:8px}
-#box p{color:#aab9ce;font-size:13px;margin-bottom:20px;line-height:1.5}
-.tabs{display:flex;gap:8px;margin-bottom:15px}
-.tab{flex:1;padding:12px;border:1px solid #ffffff22;background:#101827;color:white;border-radius:9px;cursor:pointer}
-.tab.active{background:#278bc7;border-color:#278bc7}
-.authinput{width:100%;padding:14px;border-radius:10px;border:1px solid #ffffff22;background:#0c1525;color:white;margin-bottom:10px;outline:none;font-size:14px}
-#play{width:100%;padding:14px;border:0;border-radius:10px;background:#48baf2;color:#07121b;font-weight:bold;font-size:16px;cursor:pointer}
-#authError{color:#ff8d8d;font-size:12px;min-height:18px;margin-bottom:8px}
-#authInfo{color:#9fb1c8;font-size:11px;margin-top:12px}
-#toast{position:absolute;top:75px;left:50%;transform:translateX(-50%);background:#172235;padding:10px 18px;border-radius:10px;display:none}
-#mobileControls{display:none;position:absolute;inset:0;pointer-events:none}
-#joystick{position:absolute;bottom:45px;left:25px;width:125px;height:125px;border-radius:50%;background:#ffffff26;border:2px solid #ffffff70;pointer-events:auto;touch-action:none}
-#stick{position:absolute;width:52px;height:52px;left:34px;top:34px;border-radius:50%;background:#ffffffb5;border:2px solid white}
-.mobileBtn{position:absolute;right:25px;width:65px;height:65px;border-radius:50%;border:2px solid #ffffff90;background:#172235bb;color:white;font-weight:bold;pointer-events:auto;touch-action:none}
-#jump{bottom:48px}
-#run{bottom:125px}
-#bubbleInfo{display:none}
-@media(pointer:coarse),(max-width:700px){
- #mobileControls{display:block}
- #hint{display:none}
- #chat{bottom:15px;left:50%;transform:translateX(-50%);width:85vw}
- #chat.closed{left:15px;bottom:15px;transform:none}
- #chatToggle{position:static}
- #messages{height:110px}
- #logo{font-size:19px}
-}
-</style>
+    <style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0
+    }
+
+    body {
+        overflow: hidden;
+        background: #87b9e8;
+        font-family: Arial, sans-serif;
+        color: white;
+        touch-action: none
+    }
+
+    #game {
+        position: fixed;
+        inset: 0
+    }
+
+    #hud {
+        position: fixed;
+        inset: 0;
+        pointer-events: none
+    }
+
+    #logo {
+        position: absolute;
+        top: 18px;
+        left: 20px;
+        font-size: 24px;
+        font-weight: 900;
+        text-shadow: 0 2px 8px #0008
+    }
+
+    #logo span {
+        color: #65e1ff
+    }
+
+    #online {
+        position: absolute;
+        top: 20px;
+        right: 18px;
+        background: #121b2add;
+        padding: 11px 15px;
+        border-radius: 12px;
+        font-size: 13px
+    }
+
+    #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: white;
+        transform: translate(-50%, -50%)
+    }
+
+    #hint {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111b2ad9;
+        padding: 11px 16px;
+        border-radius: 12px;
+        font-size: 12px;
+        white-space: nowrap
+    }
+
+    #chat {
+        position: absolute;
+        bottom: 62px;
+        left: 18px;
+        width: min(340px, 90vw);
+        pointer-events: auto
+    }
+
+    #messages {
+        height: 155px;
+        overflow-y: auto;
+        padding: 10px;
+        background: linear-gradient(transparent, #101827dd);
+        font-size: 13px;
+        overflow-wrap: anywhere;
+        touch-action: pan-y
+    }
+
+    #chatform {
+        display: flex;
+        gap: 6px;
+        margin-top: 5px
+    }
+
+    #chatinput {
+        flex: 1;
+        min-width: 0;
+        padding: 12px;
+        border: 1px solid #ffffff22;
+        background: #111b2af2;
+        color: white;
+        border-radius: 10px;
+        outline: none;
+        font-size: 14px
+    }
+
+    #send {
+        padding: 0 14px;
+        border: 0;
+        border-radius: 10px;
+        background: #42b7ec;
+        color: #07131b;
+        font-weight: bold
+    }
+
+    #chatToggle {
+        position: absolute;
+        bottom: 235px;
+        left: 18px;
+        pointer-events: auto;
+        padding: 10px 15px;
+        border: 0;
+        border-radius: 10px;
+        background: #172235dd;
+        color: white
+    }
+
+    #chat.closed #messages, #chat.closed #chatform {
+        display: none
+    }
+
+    #chat.closed {
+        width: auto
+    }
+
+    #chat.closed #chatToggle {
+        position: static
+    }
+
+    #start {
+        position: fixed;
+        inset: 0;
+        background: #101827dd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+        pointer-events: auto;
+        padding: 15px
+    }
+
+    #box {
+        width: min(390px, 95vw);
+        background: #172235;
+        border: 1px solid #ffffff20;
+        border-radius: 22px;
+        padding: 26px;
+        text-align: center;
+        box-shadow: 0 20px 70px #0008
+    }
+
+    #box h1 {
+        font-size: 29px;
+        margin-bottom: 8px
+    }
+
+    #box p {
+        color: #aab9ce;
+        font-size: 13px;
+        margin-bottom: 20px;
+        line-height: 1.5
+    }
+
+    .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px
+    }
+
+    .tab {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ffffff22;
+        background: #101827;
+        color: white;
+        border-radius: 9px;
+        cursor: pointer
+    }
+
+    .tab.active {
+        background: #278bc7;
+        border-color: #278bc7
+    }
+
+    .authinput {
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #ffffff22;
+        background: #0c1525;
+        color: white;
+        margin-bottom: 10px;
+        outline: none;
+        font-size: 14px
+    }
+
+    #genderPicker {
+        display: none;
+        gap: 10px;
+        margin: 2px 0 12px
+    }
+
+    .genderChoice {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ffffff30;
+        border-radius: 10px;
+        background: #0c1525;
+        color: white;
+        cursor: pointer;
+        font-size: 14px
+    }
+
+    .genderChoice.active {
+        background: #278bc7;
+        border-color: #55caff;
+        box-shadow: 0 0 0 2px #55caff33
+    }
+
+    #play {
+        width: 100%;
+        padding: 14px;
+        border: 0;
+        border-radius: 10px;
+        background: #48baf2;
+        color: #07121b;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer
+    }
+
+    #authError {
+        color: #ff8d8d;
+        font-size: 12px;
+        min-height: 18px;
+        margin-bottom: 8px
+    }
+
+    #authInfo {
+        color: #9fb1c8;
+        font-size: 11px;
+        margin-top: 12px
+    }
+
+    #toast {
+        position: absolute;
+        top: 75px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #172235;
+        padding: 10px 18px;
+        border-radius: 10px;
+        display: none
+    }
+
+    #mobileControls {
+        display: none;
+        position: absolute;
+        inset: 0;
+        pointer-events: none
+    }
+
+    #joystick {
+        position: absolute;
+        bottom: 45px;
+        left: 25px;
+        width: 125px;
+        height: 125px;
+        border-radius: 50%;
+        background: #ffffff26;
+        border: 2px solid #ffffff70;
+        pointer-events: auto;
+        touch-action: none
+    }
+
+    #stick {
+        position: absolute;
+        width: 52px;
+        height: 52px;
+        left: 34px;
+        top: 34px;
+        border-radius: 50%;
+        background: #ffffffb5;
+        border: 2px solid white
+    }
+
+    .mobileBtn {
+        position: absolute;
+        right: 25px;
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        border: 2px solid #ffffff90;
+        background: #172235bb;
+        color: white;
+        font-weight: bold;
+        pointer-events: auto;
+        touch-action: none
+    }
+
+    #jump {
+        bottom: 48px
+    }
+
+    #run {
+        bottom: 125px
+    }
+
+    #bubbleInfo {
+        display: none
+    }
+
+    @media (pointer: coarse),(max-width: 700px) {
+        #mobileControls {
+            display: block
+        }
+
+        #hint {
+            display: none
+        }
+
+        #chat {
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85vw
+        }
+
+        #chat.closed {
+            left: 15px;
+            bottom: 15px;
+            transform: none
+        }
+
+        #chatToggle {
+            position: static
+        }
+
+        #messages {
+            height: 110px
+        }
+
+        #logo {
+            font-size: 19px
+        }
+    }
+    </style>
 </head>
 
 <body>
-<div id="game"></div>
-
-<div id="hud">
- <div id="logo">TÜRK <span>SOHBET</span></div>
- <div id="online">🟢 <span id="count">0</span> Online</div>
- <div id="crosshair"></div>
-
- <div id="chat" class="closed">
-  <button id="chatToggle">💬 Sohbet (.)</button>
-  <div id="messages"></div>
-  <form id="chatform">
-   <input id="chatinput" placeholder="Mesaj yaz..." maxlength="250" autocomplete="off">
-   <button id="send">Gönder</button>
-  </form>
- </div>
-
- <div id="hint">WASD: Hareket | SHIFT: Koş | SPACE: Zıpla | . : Sohbet</div>
- <div id="toast"></div>
-
- <div id="mobileControls">
-  <div id="joystick"><div id="stick"></div></div>
-  <button class="mobileBtn" id="jump">Zıpla</button>
-  <button class="mobileBtn" id="run">Koş</button>
- </div>
-</div>
-
-<div id="start">
- <div id="box">
-  <h1>🇹🇷 Türk Sohbet</h1>
-  <p>Online dünyaya hoş geldin!<br>Hesabına giriş yap veya yeni hesap oluştur.</p>
-
-  <div class="tabs">
-   <button class="tab active" id="loginTab">Giriş Yap</button>
-   <button class="tab" id="registerTab">Kayıt Ol</button>
-  </div>
-
-  <input class="authinput" id="username" placeholder="Kullanıcı adı" maxlength="18" autocomplete="username">
-  <input class="authinput" id="password" type="password" placeholder="Şifre" maxlength="72" autocomplete="current-password">
-
-  <div id="authError"></div>
-  <button id="play">GİRİŞ YAP</button>
-  <div id="authInfo">Kullanıcı adı: 3-18 karakter, harf, rakam veya _</div>
- </div>
-</div>
-
-<script type="module">
-import * as THREE from "three";
-
-const socket = io({autoConnect:false});
-const container=document.getElementById("game");
-
-let scene,camera,renderer,clock;
-let player;
-let playing=false;
-let yaw=0,pitch=0.2;
-let mouseLocked=false;
-let jumping=false;
-let verticalSpeed=0;
-let isRunning=false;
-let lastMoveSent=0;
-let authMode="login";
-let token=localStorage.getItem("turkToken")||"";
-let savedName=localStorage.getItem("turkName")||"";
-let chatOpen=false;
-let joystick={x:0,y:0};
-let joystickPointer=null;
-const keys={};
-const remotePlayers={};
-const CHAT_TIME=3500;
-
-function init(){
- scene=new THREE.Scene();
- scene.background=new THREE.Color(0x87b9e8);
- scene.fog=new THREE.Fog(0x87b9e8,60,180);
-
- camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,500);
-
- renderer=new THREE.WebGLRenderer({antialias:true});
- renderer.setSize(innerWidth,innerHeight);
- renderer.setPixelRatio(Math.min(devicePixelRatio,2));
- renderer.shadowMap.enabled=true;
- renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=1.1;
- container.appendChild(renderer.domElement);
-
- clock=new THREE.Clock();
-
- scene.add(new THREE.HemisphereLight(0xd8edff,0x607348,2));
-
- const sun=new THREE.DirectionalLight(0xffffff,2.5);
- sun.position.set(30,50,20);
- sun.castShadow=true;
- sun.shadow.mapSize.set(2048,2048);
- scene.add(sun);
-
- createWorld();
- createPlayer();
- setupControls();
- setupOnline();
- setupAuth();
- animate();
-
- window.addEventListener("resize",resize);
-}
-
-function createWorld(){
- const ground=new THREE.Mesh(
-  new THREE.PlaneGeometry(400,400),
-  new THREE.MeshStandardMaterial({color:0x5c9c59})
- );
- ground.rotation.x=-Math.PI/2;
- ground.receiveShadow=true;
- scene.add(ground);
-
- const road=new THREE.Mesh(
-  new THREE.PlaneGeometry(16,350),
-  new THREE.MeshStandardMaterial({color:0x50545a})
- );
- road.rotation.x=-Math.PI/2;
- road.position.y=0.02;
- scene.add(road);
-
- for(let z=-170;z<180;z+=12){
-  const line=new THREE.Mesh(
-   new THREE.BoxGeometry(0.22,0.025,5),
-   new THREE.MeshStandardMaterial({color:0xffffff})
-  );
-  line.position.set(0,0.04,z);
-  scene.add(line);
- }
-
- // Evler: Sabit aralıklarla yerleştirilir, birbirlerine girmezler.
- for(let side of [-1,1]){
-  for(let row=0;row<2;row++){
-   for(let i=0;i<12;i++){
-    const x=side*(23+row*17);
-    const z=-143+i*26;
-    createHouse(x+(Math.random()-0.5)*2,z+(Math.random()-0.5)*3);
-   }
-  }
- }
-
- // Ağaçlar
- for(let side of [-1,1]){
-  for(let i=0;i<45;i++){
-   const x=side*(65+Math.random()*65);
-   const z=(Math.random()-0.5)*300;
-   createTree(x,z);
-  }
- }
-
- for(let z=-140;z<=140;z+=25){
-  createLamp(-10,z);
-  createLamp(10,z);
- }
-}
-
-function createTree(x,z){
- const trunk=new THREE.Mesh(
-  new THREE.CylinderGeometry(0.3,0.45,3,7),
-  new THREE.MeshStandardMaterial({color:0x76502b})
- );
- trunk.position.set(x,1.5,z);
- trunk.castShadow=true;
- scene.add(trunk);
-
- const leaves=new THREE.Mesh(
-  new THREE.SphereGeometry(2.2,8,7),
-  new THREE.MeshStandardMaterial({color:0x287c40})
- );
- leaves.position.set(x,4,z);
- leaves.scale.y=1.2;
- leaves.castShadow=true;
- scene.add(leaves);
-}
-
-function createHouse(x,z){
- const colors=[0xe4d1af,0xc4d7df,0xd5b7b0,0xd7d8be,0xb8c9aa];
- const color=colors[Math.floor(Math.random()*colors.length)];
-
- const group=new THREE.Group();
-
- const body=new THREE.Mesh(
-  new THREE.BoxGeometry(9,6,9),
-  new THREE.MeshStandardMaterial({color})
- );
- body.position.y=3;
- body.castShadow=true;
- body.receiveShadow=true;
- group.add(body);
-
- const roof=new THREE.Mesh(
-  new THREE.ConeGeometry(7.1,3.8,4),
-  new THREE.MeshStandardMaterial({color:0x743c32})
- );
- roof.position.y=7.8;
- roof.rotation.y=Math.PI/4;
- roof.castShadow=true;
- group.add(roof);
-
- const door=new THREE.Mesh(
-  new THREE.BoxGeometry(1.5,2.7,0.12),
-  new THREE.MeshStandardMaterial({color:0x65452c})
- );
- door.position.set(0,1.35,4.56);
- group.add(door);
-
- // Pencere
- for(let wx of [-2.6,2.6]){
-  const windowMesh=new THREE.Mesh(
-   new THREE.BoxGeometry(1.5,1.5,0.12),
-   new THREE.MeshStandardMaterial({color:0x8dd8ed,metalness:0.2,roughness:0.2})
-  );
-  windowMesh.position.set(wx,3.6,4.56);
-  group.add(windowMesh);
- }
-
- group.position.set(x,0,z);
- scene.add(group);
-}
-
-function createLamp(x,z){
- const pole=new THREE.Mesh(
-  new THREE.CylinderGeometry(0.12,0.15,7,6),
-  new THREE.MeshStandardMaterial({color:0x555b62})
- );
- pole.position.set(x,3.5,z);
- scene.add(pole);
-
- const bulb=new THREE.Mesh(
-  new THREE.SphereGeometry(0.4,8,8),
-  new THREE.MeshStandardMaterial({
-   color:0xfff0bb,
-   emissive:0xffdd88,
-   emissiveIntensity:1
-  })
- );
- bulb.position.set(x,7,z);
- scene.add(bulb);
-}
-
-function makeTextSprite(text,background="#172235dd",fontSize=38){
- const canvas=document.createElement("canvas");
- canvas.width=512;
- canvas.height=128;
- const ctx=canvas.getContext("2d");
- ctx.fillStyle=background;
- ctx.beginPath();
- ctx.roundRect(12,12,488,104,22);
- ctx.fill();
- ctx.fillStyle="white";
- ctx.font=`bold ${fontSize}px Arial`;
- ctx.textAlign="center";
- ctx.textBaseline="middle";
- ctx.fillText(text.slice(0,32),256,65,460);
- const texture=new THREE.CanvasTexture(canvas);
- const sprite=new THREE.Sprite(new THREE.SpriteMaterial({
-  map:texture,transparent:true,depthTest:false
- }));
- sprite.scale.set(3.5,0.88,1);
- return sprite;
-}
-
-function createCharacter(color=0x278bd1){
- const group=new THREE.Group();
-
- const body=new THREE.Mesh(
-  new THREE.BoxGeometry(0.8,1.2,0.45),
-  new THREE.MeshStandardMaterial({color})
- );
- body.position.y=1.55;
- body.castShadow=true;
- group.add(body);
-
- const head=new THREE.Mesh(
-  new THREE.SphereGeometry(0.42,16,12),
-  new THREE.MeshStandardMaterial({color:0xffd1a6})
- );
- head.position.y=2.45;
- head.castShadow=true;
- group.add(head);
-
- const legs=[];
- const arms=[];
-
- for(const x of [-0.23,0.23]){
-  const leg=new THREE.Mesh(
-   new THREE.BoxGeometry(0.25,0.7,0.3),
-   new THREE.MeshStandardMaterial({color:0x27384d})
-  );
-  leg.position.set(x,0.55,0);
-  leg.castShadow=true;
-  group.add(leg);
-  legs.push(leg);
- }
-
- for(const x of [-0.55,0.55]){
-  const arm=new THREE.Mesh(
-   new THREE.BoxGeometry(0.22,0.85,0.25),
-   new THREE.MeshStandardMaterial({color})
-  );
-  arm.position.set(x,1.6,0);
-  group.add(arm);
-  arms.push(arm);
- }
-
- group.userData.legs=legs;
- group.userData.arms=arms;
- group.userData.body=body;
- return group;
-}
-
-function createPlayer(){
- player=createCharacter();
- player.position.set(0,0,0);
- scene.add(player);
- player.userData.nameTag=makeTextSprite(savedName||"Oyuncu");
- player.userData.nameTag.position.y=3.65;
- player.add(player.userData.nameTag);
- player.userData.bubble=makeTextSprite("", "#18243beF",30);
- player.userData.bubble.position.y=4.65;
- player.userData.bubble.visible=false;
- player.add(player.userData.bubble);
- player.userData.bubbleUntil=0;
-}
-
-function makeRemote(id,name){
- const group=createCharacter(0xe0a331);
-
- const nameTag=makeTextSprite(name);
- nameTag.position.y=3.65;
- group.add(nameTag);
-
- const bubble=makeTextSprite("");
- bubble.position.y=4.65;
- bubble.visible=false;
- group.add(bubble);
-
- scene.add(group);
-
- remotePlayers[id]={
-  group,
-  name,
-  bubble,
-  bubbleUntil:0,
-  target:new THREE.Vector3()
- };
-
- return remotePlayers[id];
-}
-
-function showBubble(character,message){
- const bubble=character.userData?.bubble || character.bubble;
- if(!bubble)return;
-
- bubble.material.map.dispose();
- bubble.material.map=makeTextSprite(message,"#18243bef",30).material.map;
- bubble.material.needsUpdate=true;
- bubble.visible=true;
-
- if(character.userData){
-  character.userData.bubbleUntil=Date.now()+CHAT_TIME;
- }else{
-  character.bubbleUntil=Date.now()+CHAT_TIME;
- }
-}
-
-function setupOnline(){
- socket.on("connect",()=>{
-  showToast("Sunucuya bağlandın!");
- });
-
- socket.on("connect_error",()=>{
-  showToast("Bağlantı kurulamadı. Tekrar giriş yap.");
-  playing=false;
-  document.getElementById("start").style.display="flex";
-  document.getElementById("authError").textContent="Oyun sunucusuna bağlanılamadı. Tekrar giriş yap.";
- });
-
- socket.on("welcome",data=>{
-  for(const id in data.players){
-   if(id===socket.id)continue;
-   const p=data.players[id];
-   const r=makeRemote(id,p.name);
-   r.group.position.set(p.x,p.y,p.z);
-  }
-  updateCount();
- });
-
- socket.on("playerJoined",p=>{
-  if(remotePlayers[p.id])return;
-  const r=makeRemote(p.id,p.name);
-  r.group.position.set(p.x,p.y,p.z);
-  updateCount();
-  addMessage("Sistem",p.name+" oyuna katıldı.");
- });
-
- socket.on("playerMoved",p=>{
-  const r=remotePlayers[p.id];
-  if(!r)return;
-  r.target.set(p.x,p.y,p.z);
-  r.group.rotation.y=p.rotation;
- });
-
- socket.on("playerLeft",id=>{
-  if(remotePlayers[id]){
-   scene.remove(remotePlayers[id].group);
-   delete remotePlayers[id];
-  }
-  updateCount();
- });
-
- socket.on("playerUpdated",p=>{
-  const r=remotePlayers[p.id];
-  if(!r)return;
-  r.name=p.name;
- });
-
- socket.on("chatMessage",data=>{
-  addMessage(data.name,data.message);
-  if(data.id===socket.id){
-   showBubble(player,data.message);
-  }else if(remotePlayers[data.id]){
-   showBubble(remotePlayers[data.id],data.message);
-  }
- });
-
- socket.on("sessionReplaced",()=>{
-  token="";
-  localStorage.removeItem("turkToken");
-  showToast("Hesabın başka bir yerde açıldı.");
-  socket.disconnect();
-  playing=false;
-  document.getElementById("start").style.display="flex";
- });
-}
-
-function setupAuth(){
- document.getElementById("loginTab").onclick=()=>setAuthMode("login");
- document.getElementById("registerTab").onclick=()=>setAuthMode("register");
-
- document.getElementById("play").onclick=authenticate;
-
- document.getElementById("password").addEventListener("keydown",e=>{
-  if(e.key==="Enter")authenticate();
- });
-
- if(savedName){
-  document.getElementById("username").value=savedName;
- }
-}
-
-function setAuthMode(mode){
- authMode=mode;
- document.getElementById("loginTab").classList.toggle("active",mode==="login");
- document.getElementById("registerTab").classList.toggle("active",mode==="register");
- document.getElementById("play").textContent=mode==="login"?"GİRİŞ YAP":"KAYIT OL";
- document.getElementById("authError").textContent="";
-}
-
-async function authenticate(){
- const username=document.getElementById("username").value.trim();
- const password=document.getElementById("password").value;
- const error=document.getElementById("authError");
- const button=document.getElementById("play");
-
- error.textContent="";
-
- if(!/^[a-zA-Z0-9_]{3,18}$/.test(username)){
-  error.textContent="Kullanıcı adı 3-18 karakter olmalı.";
-  return;
- }
-
- if(password.length<6){
-  error.textContent="Şifre en az 6 karakter olmalı.";
-  return;
- }
-
- button.disabled=true;
- button.textContent="BEKLE...";
-
- try{
-  const response=await fetch("/api/"+(authMode==="login"?"login":"register"),{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({username,password})
-  });
-
-  const data=await response.json();
-
-  if(!response.ok)throw new Error(data.error||"İşlem başarısız.");
-
-  token=data.token;
-  savedName=data.username;
-
-  localStorage.setItem("turkToken",token);
-  localStorage.setItem("turkName",savedName);
-
-  player.userData.nameTag.material.map.dispose();
-  player.userData.nameTag.material.map=makeTextSprite(savedName).material.map;
-  player.userData.nameTag.material.needsUpdate=true;
-
-  socket.auth={token};
-  socket.connect();
-
-  if(socket.connected){
-   enterGame();
-  }else{
-   socket.once("connect",enterGame);
-  }
- }catch(e){
-  error.textContent=e.message;
- }finally{
-  button.disabled=false;
-  button.textContent=authMode==="login"?"GİRİŞ YAP":"KAYIT OL";
- }
-}
-
-function enterGame(){
- playing=true;
- document.getElementById("start").style.display="none";
- player.position.set(0,0,0);
- if(matchMedia("(pointer:fine)").matches){
-  renderer.domElement.requestPointerLock();
- }
- addMessage("Sistem","Hoş geldin "+savedName+"!");
-}
-
-function setupControls(){
- document.addEventListener("keydown",e=>{
-  if(e.target===document.getElementById("chatinput"))return;
-  if(!playing)return;
-
-  if(e.code==="Period" || e.key==="."){
-   e.preventDefault();
-   toggleChat(true);
-   return;
-  }
-
-  if(e.code==="Escape"){
-   toggleChat(false);
-   return;
-  }
-
-  keys[e.code]=true;
-  if(["Space","ArrowUp","ArrowDown"].includes(e.code))e.preventDefault();
- });
-
- document.addEventListener("keyup",e=>{
-  keys[e.code]=false;
- });
-
- renderer.domElement.addEventListener("click",()=>{
-  if(playing && !chatOpen && matchMedia("(pointer:fine)").matches){
-   renderer.domElement.requestPointerLock();
-  }
- });
-
- document.addEventListener("pointerlockchange",()=>{
-  mouseLocked=document.pointerLockElement===renderer.domElement;
- });
-
- document.addEventListener("mousemove",e=>{
-  if(!mouseLocked||!playing||chatOpen)return;
-  yaw-=e.movementX*0.0025;
-  pitch-=e.movementY*0.002;
-  pitch=Math.max(-0.8,Math.min(0.9,pitch));
- });
-
- document.getElementById("chatToggle").onclick=()=>{
-  toggleChat(!chatOpen);
- };
-
- document.getElementById("chatform").onsubmit=e=>{
-  e.preventDefault();
-  const input=document.getElementById("chatinput");
-  const msg=input.value.trim();
-  if(!msg)return;
-  if(socket.connected)socket.emit("chat",msg);
-  input.value="";
-  input.blur();
-  toggleChat(false);
- };
-
- const joystickElement=document.getElementById("joystick");
- const stick=document.getElementById("stick");
-
- joystickElement.addEventListener("pointerdown",e=>{
-  joystickPointer=e.pointerId;
-  joystickElement.setPointerCapture(e.pointerId);
-  updateJoystick(e);
- });
-
- joystickElement.addEventListener("pointermove",e=>{
-  if(e.pointerId===joystickPointer)updateJoystick(e);
- });
-
- function releaseJoystick(e){
-  if(e.pointerId!==joystickPointer)return;
-  joystickPointer=null;
-  joystick.x=0;
-  joystick.y=0;
-  stick.style.left="34px";
-  stick.style.top="34px";
- }
- joystickElement.addEventListener("pointerup",releaseJoystick);
- joystickElement.addEventListener("pointercancel",releaseJoystick);
-
- function updateJoystick(e){
-  const rect=joystickElement.getBoundingClientRect();
-  const cx=rect.left+rect.width/2;
-  const cy=rect.top+rect.height/2;
-  let dx=e.clientX-cx;
-  let dy=e.clientY-cy;
-  const max=40;
-  const len=Math.hypot(dx,dy);
-  if(len>max){dx=dx/len*max;dy=dy/len*max;}
-  joystick.x=dx/max;
-  joystick.y=dy/max;
-  stick.style.left=(34+dx)+"px";
-  stick.style.top=(34+dy)+"px";
- }
-
- const jumpButton=document.getElementById("jump");
- jumpButton.addEventListener("pointerdown",e=>{
-  e.preventDefault();
-  jump();
- });
-
- const runButton=document.getElementById("run");
- runButton.addEventListener("pointerdown",e=>{
-  e.preventDefault();
-  isRunning=true;
- });
- ["pointerup","pointercancel","pointerleave"].forEach(event=>{
-  runButton.addEventListener(event,()=>isRunning=false);
- });
-
- document.getElementById("chatinput").addEventListener("keydown",e=>{
-  e.stopPropagation();
-  if(e.key==="Escape"){
-   e.preventDefault();
-   toggleChat(false);
-  }
- });
-}
-
-function jump(){
- if(!playing||jumping)return;
- jumping=true;
- verticalSpeed=7;
-}
-
-function toggleChat(open){
- chatOpen=open;
- const chat=document.getElementById("chat");
- chat.classList.toggle("closed",!open);
- if(open){
-  document.exitPointerLock?.();
-  document.getElementById("chatinput").focus();
- }else{
-  document.getElementById("chatinput").blur();
- }
-}
-
-function addMessage(name,message){
- const box=document.getElementById("messages");
- const row=document.createElement("div");
- const n=document.createElement("b");
- const m=document.createElement("span");
- n.textContent=name+": ";
- m.textContent=message;
- row.append(n,m);
- box.appendChild(row);
- box.scrollTop=box.scrollHeight;
- while(box.children.length>60)box.removeChild(box.firstChild);
-}
-
-function showToast(message){
- const toast=document.getElementById("toast");
- toast.textContent=message;
- toast.style.display="block";
- clearTimeout(showToast.timer);
- showToast.timer=setTimeout(()=>toast.style.display="none",2500);
-}
-
-function updateCount(){
- document.getElementById("count").textContent=Object.keys(remotePlayers).length+1;
-}
-
-function animate(){
- requestAnimationFrame(animate);
- const dt=Math.min(clock.getDelta(),0.05);
- const now=Date.now();
-
- if(playing){
-  const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
-  const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
-  const dir=new THREE.Vector3();
-
-  if(keys["KeyW"])dir.add(forward);
-  if(keys["KeyS"])dir.sub(forward);
-  if(keys["KeyD"])dir.add(right);
-  if(keys["KeyA"])dir.sub(right);
-
-  if(Math.abs(joystick.x)>0.08)dir.addScaledVector(right,joystick.x);
-  if(Math.abs(joystick.y)>0.08)dir.addScaledVector(forward,-joystick.y);
-
-  const moving=dir.length()>0.05;
-  const running=isRunning||keys["ShiftLeft"]||keys["ShiftRight"];
-  const speed=running?11:5.5;
-
-  if(moving){
-   dir.normalize();
-   player.position.addScaledVector(dir,speed*dt);
-   player.rotation.y=Math.atan2(dir.x,dir.z);
-  }
-
-  if(keys["Space"])jump();
-  if(jumping){
-   player.position.y+=verticalSpeed*dt;
-   verticalSpeed-=18*dt;
-   if(player.position.y<=0){
-    player.position.y=0;
-    jumping=false;
-    verticalSpeed=0;
-   }
-  }
-
-  if(moving){
-   const t=clock.elapsedTime*speed;
-   player.userData.legs[0].rotation.x=Math.sin(t)*0.65;
-   player.userData.legs[1].rotation.x=-Math.sin(t)*0.65;
-   player.userData.arms[0].rotation.x=-Math.sin(t)*0.45;
-   player.userData.arms[1].rotation.x=Math.sin(t)*0.45;
-  }else{
-   player.userData.legs.forEach(l=>l.rotation.x=0);
-   player.userData.arms.forEach(a=>a.rotation.x=0);
-  }
-
-  const target=player.position.clone().add(new THREE.Vector3(0,1.7,0));
-  const distance=6;
-  const offset=new THREE.Vector3(
-   Math.sin(yaw)*distance,
-   2.5+pitch*3,
-   Math.cos(yaw)*distance
-  );
-  camera.position.lerp(target.clone().add(offset),0.12);
-  camera.lookAt(target);
-
-  if(now-lastMoveSent>50){
-   socket.emit("move",{
-    x:player.position.x,
-    y:player.position.y,
-    z:player.position.z,
-    rotation:player.rotation.y
-   });
-   lastMoveSent=now;
-  }
-
-  if(player.userData.bubble.visible && now>player.userData.bubbleUntil){
-   player.userData.bubble.visible=false;
-  }
- }
-
- for(const id in remotePlayers){
-  const r=remotePlayers[id];
-  r.group.position.lerp(r.target,0.3);
-  if(r.bubble.visible&&now>r.bubbleUntil){
-   r.bubble.visible=false;
-  }
- }
-
- renderer.render(scene,camera);
-}
-
-function resize(){
- camera.aspect=innerWidth/innerHeight;
- camera.updateProjectionMatrix();
- renderer.setSize(innerWidth,innerHeight);
-}
-
-init();
-</script>
+    <div id="game"></div>
+
+    <div id="hud">
+        <div id="logo">
+            TÜRK 
+            <span>SOHBET</span>
+        </div>
+        <div id="online">
+            🟢 
+            <span id="count">0</span>
+             Online
+        </div>
+        <div id="crosshair"></div>
+
+        <div id="chat" class="closed">
+            <button id="chatToggle">💬 Sohbet (.)</button>
+            <div id="messages"></div>
+            <form id="chatform">
+                <input id="chatinput" placeholder="Mesaj yaz..." maxlength="250" autocomplete="off">
+                <button id="send">Gönder</button>
+            </form>
+        </div>
+
+        <div id="hint">WASD: Hareket | SHIFT: Koş | SPACE: Zıpla | . : Sohbet</div>
+        <div id="toast"></div>
+
+        <div id="mobileControls">
+            <div id="joystick">
+                <div id="stick"></div>
+            </div>
+            <button class="mobileBtn" id="jump">Zıpla</button>
+            <button class="mobileBtn" id="run">Koş</button>
+        </div>
+    </div>
+
+    <div id="start">
+        <div id="box">
+            <h1>🇹🇷 Türk Sohbet</h1>
+            <p>
+                Online dünyaya hoş geldin!
+                <br>
+                Hesabına giriş yap veya yeni hesap oluştur.
+            </p>
+
+            <div class="tabs">
+                <button class="tab active" id="loginTab">Giriş Yap</button>
+                <button class="tab" id="registerTab">Kayıt Ol</button>
+            </div>
+
+            <input class="authinput" id="username" placeholder="Kullanıcı adı" maxlength="18" autocomplete="username">
+            <input class="authinput" id="password" type="password" placeholder="Şifre" maxlength="72" autocomplete="current-password">
+
+            <div id="authError"></div>
+            <button id="play">GİRİŞ YAP</button>
+            <div id="authInfo">Kullanıcı adı: 3-18 karakter, harf, rakam veya _</div>
+        </div>
+    </div>
+
+    <script type="module">
+    import * as THREE from "three";
+
+    const socket = io({
+        autoConnect: false
+    });
+    const container = document.getElementById("game");
+
+    let scene,
+        camera,
+        renderer,
+        clock;
+    let player;
+    let playing = false;
+    let yaw = 0,
+        pitch = 0.2;
+    let mouseLocked = false;
+    let jumping = false;
+    let verticalSpeed = 0;
+    let isRunning = false;
+    let lastMoveSent = 0;
+    let authMode = "login";
+    let selectedGender = "male";
+    let myGender = "male";
+    let token = localStorage.getItem("turkToken") || "";
+    let savedName = localStorage.getItem("turkName") || "";
+    let chatOpen = false;
+    let joystick = {
+        x: 0,
+        y: 0
+    };
+    let joystickPointer = null;
+    const keys = {};
+    const remotePlayers = {};
+    const CHAT_TIME = 3500;
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87b9e8);
+        scene.fog = new THREE.Fog(0x87b9e8, 60, 180);
+
+        camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 500);
+
+        renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        clock = new THREE.Clock();
+
+        scene.add(new THREE.HemisphereLight(0xd8edff, 0x607348, 2));
+
+        const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+        sun.position.set(30, 50, 20);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        scene.add(sun);
+
+        createWorld();
+        createPlayer();
+        setupControls();
+        setupOnline();
+        setupAuth();
+        animate();
+
+        window.addEventListener("resize", resize);
+    }
+
+    function createWorld() {
+        const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(400, 400),
+        new THREE.MeshStandardMaterial({
+            color: 0x5c9c59
+        })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const road = new THREE.Mesh(
+        new THREE.PlaneGeometry(16, 350),
+        new THREE.MeshStandardMaterial({
+            color: 0x50545a
+        })
+        );
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.02;
+        scene.add(road);
+
+        for (let z = -170; z < 180; z += 12) {
+            const line = new THREE.Mesh(
+            new THREE.BoxGeometry(0.22, 0.025, 5),
+            new THREE.MeshStandardMaterial({
+                color: 0xffffff
+            })
+            );
+            line.position.set(0, 0.04, z);
+            scene.add(line);
+        }
+
+        // Evler: Sabit aralıklarla yerleştirilir, birbirlerine girmezler.
+        for (let side of [-1, 1]) {
+            for (let row = 0; row < 2; row++) {
+                for (let i = 0; i < 12; i++) {
+                    const x = side * (23 + row * 17);
+                    const z = -143 + i * 26;
+                    createHouse(x + (Math.random() - 0.5) * 2, z + (Math.random() - 0.5) * 3);
+                }
+            }
+        }
+
+        // Ağaçlar
+        for (let side of [-1, 1]) {
+            for (let i = 0; i < 45; i++) {
+                const x = side * (65 + Math.random() * 65);
+                const z = (Math.random() - 0.5) * 300;
+                createTree(x, z);
+            }
+        }
+
+        for (let z = -140; z <= 140; z += 25) {
+            createLamp(-10, z);
+            createLamp(10, z);
+        }
+    }
+
+    function createTree(x, z) {
+        const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.45, 3, 7),
+        new THREE.MeshStandardMaterial({
+            color: 0x76502b
+        })
+        );
+        trunk.position.set(x, 1.5, z);
+        trunk.castShadow = true;
+        scene.add(trunk);
+
+        const leaves = new THREE.Mesh(
+        new THREE.SphereGeometry(2.2, 8, 7),
+        new THREE.MeshStandardMaterial({
+            color: 0x287c40
+        })
+        );
+        leaves.position.set(x, 4, z);
+        leaves.scale.y = 1.2;
+        leaves.castShadow = true;
+        scene.add(leaves);
+    }
+
+    function createHouse(x, z) {
+        const colors = [0xe4d1af, 0xc4d7df, 0xd5b7b0, 0xd7d8be, 0xb8c9aa];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        const group = new THREE.Group();
+
+        const body = new THREE.Mesh(
+        new THREE.BoxGeometry(9, 6, 9),
+        new THREE.MeshStandardMaterial({
+            color
+        })
+        );
+        body.position.y = 3;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        group.add(body);
+
+        const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(7.1, 3.8, 4),
+        new THREE.MeshStandardMaterial({
+            color: 0x743c32
+        })
+        );
+        roof.position.y = 7.8;
+        roof.rotation.y = Math.PI / 4;
+        roof.castShadow = true;
+        group.add(roof);
+
+        const door = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 2.7, 0.12),
+        new THREE.MeshStandardMaterial({
+            color: 0x65452c
+        })
+        );
+        door.position.set(0, 1.35, 4.56);
+        group.add(door);
+
+        // Pencere
+        for (let wx of [-2.6, 2.6]) {
+            const windowMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(1.5, 1.5, 0.12),
+            new THREE.MeshStandardMaterial({
+                color: 0x8dd8ed,
+                metalness: 0.2,
+                roughness: 0.2
+            })
+            );
+            windowMesh.position.set(wx, 3.6, 4.56);
+            group.add(windowMesh);
+        }
+
+        group.position.set(x, 0, z);
+        scene.add(group);
+    }
+
+    function createLamp(x, z) {
+        const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.15, 7, 6),
+        new THREE.MeshStandardMaterial({
+            color: 0x555b62
+        })
+        );
+        pole.position.set(x, 3.5, z);
+        scene.add(pole);
+
+        const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.4, 8, 8),
+        new THREE.MeshStandardMaterial({
+            color: 0xfff0bb,
+            emissive: 0xffdd88,
+            emissiveIntensity: 1
+        })
+        );
+        bulb.position.set(x, 7, z);
+        scene.add(bulb);
+    }
+
+    function makeTextSprite(text, background="#172235dd", fontSize=38) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 128;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = background;
+        ctx.beginPath();
+        ctx.roundRect(12, 12, 488, 104, 22);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text.slice(0, 32), 256, 65, 460);
+        const texture = new THREE.CanvasTexture(canvas);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthTest: false
+        }));
+        sprite.scale.set(3.5, 0.88, 1);
+        return sprite;
+    }
+
+    function createCharacter(gender="male", color=0x278bd1) {
+        const group = new THREE.Group();
+
+        const body = new THREE.Mesh(
+        new THREE.BoxGeometry(gender === "female" ? 0.78 : 0.85, 1.2, 0.45),
+        new THREE.MeshStandardMaterial({
+            color: gender === "female" ? 0xb85b91 : color
+        })
+        );
+        body.position.y = 1.55;
+        body.castShadow = true;
+        group.add(body);
+
+        const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.42, 16, 12),
+        new THREE.MeshStandardMaterial({
+            color: 0xffd1a6
+        })
+        );
+        head.position.y = 2.45;
+        head.castShadow = true;
+        group.add(head);
+
+        const hairMaterial = new THREE.MeshStandardMaterial({
+            color: gender === "female" ? 0x39251f : 0x30251f
+        });
+        if (gender === "female") {
+            const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.445, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMaterial);
+            hairCap.position.set(0, 2.55, -0.015);
+            group.add(hairCap);
+            for (const side of [-1, 1]) {
+                const lock = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.48, 4, 8), hairMaterial);
+                lock.position.set(side * 0.34, 2.22, -0.02);
+                lock.rotation.z = side * 0.08;
+                group.add(lock);
+            }
+        } else {
+            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.43, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.34), hairMaterial);
+            hair.position.set(0, 2.66, 0);
+            group.add(hair);
+        }
+
+        const legs = [];
+        const arms = [];
+        for (const x of [-0.23, 0.23]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.3), new THREE.MeshStandardMaterial({
+                color: 0x27384d
+            }));
+            leg.position.set(x, 0.55, 0);
+            leg.castShadow = true;
+            group.add(leg);
+            legs.push(leg);
+        }
+        for (const x of [-0.55, 0.55]) {
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.85, 0.25), new THREE.MeshStandardMaterial({
+                color: gender === "female" ? 0xb85b91 : color
+            }));
+            arm.position.set(x, 1.6, 0);
+            group.add(arm);
+            arms.push(arm);
+        }
+        group.userData.legs = legs;
+        group.userData.arms = arms;
+        group.userData.body = body;
+        group.userData.gender = gender;
+        return group;
+    }
+
+    function createPlayer() {
+        player = createCharacter(myGender);
+        player.position.set(0, 0, 0);
+        scene.add(player);
+        player.userData.nameTag = makeTextSprite(savedName || "Oyuncu");
+        player.userData.nameTag.position.y = 3.65;
+        player.add(player.userData.nameTag);
+        player.userData.bubble = makeTextSprite("", "#18243beF", 30);
+        player.userData.bubble.position.y = 4.65;
+        player.userData.bubble.visible = false;
+        player.add(player.userData.bubble);
+        player.userData.bubbleUntil = 0;
+    }
+
+    function applyLocalGender(gender) {
+        myGender = gender === "female" ? "female" : "male";
+        const oldPosition = player ? player.position.clone() : new THREE.Vector3();
+        if (player)
+            scene.remove(player);
+        player = createCharacter(myGender);
+        player.position.copy(oldPosition);
+        scene.add(player);
+        player.userData.nameTag = makeTextSprite(savedName || "Oyuncu");
+        player.userData.nameTag.position.y = 3.65;
+        player.add(player.userData.nameTag);
+        player.userData.bubble = makeTextSprite("", "#18243beF", 30);
+        player.userData.bubble.position.y = 4.65;
+        player.userData.bubble.visible = false;
+        player.add(player.userData.bubble);
+        player.userData.bubbleUntil = 0;
+    }
+
+    function makeRemote(id, name, gender="male") {
+        const group = createCharacter(gender, gender === "female" ? 0xb85b91 : 0xe0a331);
+
+        const nameTag = makeTextSprite(name);
+        nameTag.position.y = 3.65;
+        group.add(nameTag);
+
+        const bubble = makeTextSprite("");
+        bubble.position.y = 4.65;
+        bubble.visible = false;
+        group.add(bubble);
+
+        scene.add(group);
+
+        remotePlayers[id] = {
+            group,
+            name,
+            gender,
+            moving: false,
+            running: false,
+            bubble,
+            bubbleUntil: 0,
+            target: new THREE.Vector3()
+        };
+
+        return remotePlayers[id];
+    }
+
+    function showBubble(character, message) {
+        const bubble = character.userData?.bubble || character.bubble;
+        if (!bubble)
+            return;
+
+        bubble.material.map.dispose();
+        bubble.material.map = makeTextSprite(message, "#18243bef", 30).material.map;
+        bubble.material.needsUpdate = true;
+        bubble.visible = true;
+
+        if (character.userData) {
+            character.userData.bubbleUntil = Date.now() + CHAT_TIME;
+        } else {
+            character.bubbleUntil = Date.now() + CHAT_TIME;
+        }
+    }
+
+    function setupOnline() {
+        socket.on("connect", () => {
+            showToast("Sunucuya bağlandın!");
+        });
+
+        socket.on("connect_error", () => {
+            showToast("Bağlantı kurulamadı. Tekrar giriş yap.");
+            playing = false;
+            document.getElementById("start").style.display = "flex";
+            document.getElementById("authError").textContent = "Oyun sunucusuna bağlanılamadı. Tekrar giriş yap.";
+        });
+
+        socket.on("welcome", data => {
+            for (const id in data.players) {
+                if (id === socket.id)
+                    continue;
+                const p = data.players[id];
+                const r = makeRemote(id, p.name, p.gender);
+                r.group.position.set(p.x, p.y, p.z);
+                r.target.set(p.x, p.y, p.z);
+                r.group.rotation.y = p.rotation || 0;
+                r.moving = !!p.moving;
+                r.running = !!p.running;
+            }
+            updateCount();
+        });
+
+        socket.on("playerJoined", p => {
+            if (remotePlayers[p.id])
+                return;
+            const r = makeRemote(p.id, p.name, p.gender);
+            r.group.position.set(p.x, p.y, p.z);
+            r.target.set(p.x, p.y, p.z);
+            updateCount();
+            addMessage("Sistem", p.name + " oyuna katıldı.");
+        });
+
+        socket.on("playerMoved", p => {
+            const r = remotePlayers[p.id];
+            if (!r)
+                return;
+            r.target.set(p.x, p.y, p.z);
+            r.group.rotation.y = p.rotation;
+            r.moving = !!p.moving;
+            r.running = !!p.running;
+        });
+
+        socket.on("playerLeft", id => {
+            if (remotePlayers[id]) {
+                scene.remove(remotePlayers[id].group);
+                delete remotePlayers[id];
+            }
+            updateCount();
+        });
+
+        socket.on("playerUpdated", p => {
+            const r = remotePlayers[p.id];
+            if (!r)
+                return;
+            r.name = p.name;
+        });
+
+        socket.on("chatMessage", data => {
+            addMessage(data.name, data.message);
+            if (data.id === socket.id) {
+                showBubble(player, data.message);
+            } else if (remotePlayers[data.id]) {
+                showBubble(remotePlayers[data.id], data.message);
+            }
+        });
+
+        socket.on("sessionReplaced", () => {
+            token = "";
+            localStorage.removeItem("turkToken");
+            showToast("Hesabın başka bir yerde açıldı.");
+            socket.disconnect();
+            playing = false;
+            document.getElementById("start").style.display = "flex";
+        });
+    }
+
+    function setupAuth() {
+        document.getElementById("loginTab").onclick = () => setAuthMode("login");
+        document.getElementById("registerTab").onclick = () => setAuthMode("register");
+
+        document.querySelectorAll(".genderChoice").forEach(button => {
+            button.onclick = () => {
+                selectedGender = button.dataset.gender;
+                document.querySelectorAll(".genderChoice").forEach(item =>
+                item.classList.toggle("active", item === button)
+                );
+            };
+        });
+
+        document.getElementById("play").onclick = authenticate;
+
+        document.getElementById("password").addEventListener("keydown", e => {
+            if (e.key === "Enter")
+                authenticate();
+        });
+
+        if (savedName) {
+            document.getElementById("username").value = savedName;
+        }
+    }
+
+    function setAuthMode(mode) {
+        authMode = mode;
+        document.getElementById("loginTab").classList.toggle("active", mode === "login");
+        document.getElementById("registerTab").classList.toggle("active", mode === "register");
+        document.getElementById("play").textContent = mode === "login" ? "GİRİŞ YAP" : "KAYIT OL";
+        document.getElementById("authError").textContent = "";
+        document.getElementById("genderPicker").style.display = mode === "register" ? "flex" : "none";
+    }
+
+    async function authenticate() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const error = document.getElementById("authError");
+        const button = document.getElementById("play");
+
+        error.textContent = "";
+
+        if (!/^[a-zA-Z0-9_]{3,18}$/.test(username)) {
+            error.textContent = "Kullanıcı adı 3-18 karakter olmalı.";
+            return;
+        }
+
+        if (password.length < 6) {
+            error.textContent = "Şifre en az 6 karakter olmalı.";
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = "BEKLE...";
+
+        try {
+            const response = await fetch("/api/" + (authMode === "login" ? "login" : "register"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username,
+                    password,
+                    gender: selectedGender
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok)
+                throw new Error(data.error || "İşlem başarısız.");
+
+            token = data.token;
+            savedName = data.username;
+            applyLocalGender(data.gender || "male");
+
+            localStorage.setItem("turkToken", token);
+            localStorage.setItem("turkName", savedName);
+
+            player.userData.nameTag.material.map.dispose();
+            player.userData.nameTag.material.map = makeTextSprite(savedName).material.map;
+            player.userData.nameTag.material.needsUpdate = true;
+
+            socket.auth = {
+                token
+            };
+            socket.connect();
+
+            if (socket.connected) {
+                enterGame();
+            } else {
+                socket.once("connect", enterGame);
+            }
+        } catch (e) {
+            error.textContent = e.message;
+        } finally {
+            button.disabled = false;
+            button.textContent = authMode === "login" ? "GİRİŞ YAP" : "KAYIT OL";
+        }
+    }
+
+    function enterGame() {
+        playing = true;
+        document.getElementById("start").style.display = "none";
+        player.position.set(0, 0, 0);
+        if (matchMedia("(pointer:fine)").matches) {
+            renderer.domElement.requestPointerLock();
+        }
+        addMessage("Sistem", "Hoş geldin " + savedName + "!");
+    }
+
+    function setupControls() {
+        document.addEventListener("keydown", e => {
+            if (e.target === document.getElementById("chatinput"))
+                return;
+            if (!playing)
+                return;
+
+            if (e.code === "Period" || e.key === ".") {
+                e.preventDefault();
+                toggleChat(true);
+                return;
+            }
+
+            if (e.code === "Escape") {
+                toggleChat(false);
+                return;
+            }
+
+            keys[e.code] = true;
+            if (["Space", "ArrowUp", "ArrowDown"].includes(e.code))
+                e.preventDefault();
+        });
+
+        document.addEventListener("keyup", e => {
+            keys[e.code] = false;
+        });
+
+        renderer.domElement.addEventListener("click", () => {
+            if (playing && !chatOpen && matchMedia("(pointer:fine)").matches) {
+                renderer.domElement.requestPointerLock();
+            }
+        });
+
+        document.addEventListener("pointerlockchange", () => {
+            mouseLocked = document.pointerLockElement === renderer.domElement;
+        });
+
+        document.addEventListener("mousemove", e => {
+            if (!mouseLocked || !playing || chatOpen)
+                return;
+            yaw -= e.movementX * 0.0025;
+            pitch -= e.movementY * 0.002;
+            pitch = Math.max(-0.8, Math.min(0.9, pitch));
+        });
+
+        document.getElementById("chatToggle").onclick = () => {
+            toggleChat(!chatOpen);
+        };
+
+        document.getElementById("chatform").onsubmit = e => {
+            e.preventDefault();
+            const input = document.getElementById("chatinput");
+            const msg = input.value.trim();
+            if (!msg)
+                return;
+            if (socket.connected)
+                socket.emit("chat", msg);
+            input.value = "";
+            input.blur();
+            toggleChat(false);
+        };
+
+        const joystickElement = document.getElementById("joystick");
+        const stick = document.getElementById("stick");
+
+        joystickElement.addEventListener("pointerdown", e => {
+            joystickPointer = e.pointerId;
+            joystickElement.setPointerCapture(e.pointerId);
+            updateJoystick(e);
+        });
+
+        joystickElement.addEventListener("pointermove", e => {
+            if (e.pointerId === joystickPointer)
+                updateJoystick(e);
+        });
+
+        function releaseJoystick(e) {
+            if (e.pointerId !== joystickPointer)
+                return;
+            joystickPointer = null;
+            joystick.x = 0;
+            joystick.y = 0;
+            stick.style.left = "34px";
+            stick.style.top = "34px";
+        }
+        joystickElement.addEventListener("pointerup", releaseJoystick);
+        joystickElement.addEventListener("pointercancel", releaseJoystick);
+
+        function updateJoystick(e) {
+            const rect = joystickElement.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            let dx = e.clientX - cx;
+            let dy = e.clientY - cy;
+            const max = 40;
+            const len = Math.hypot(dx, dy);
+            if (len > max) {
+                dx = dx / len * max;
+                dy = dy / len * max;
+            }
+            joystick.x = dx / max;
+            joystick.y = dy / max;
+            stick.style.left = (34 + dx) + "px";
+            stick.style.top = (34 + dy) + "px";
+        }
+
+        const jumpButton = document.getElementById("jump");
+        jumpButton.addEventListener("pointerdown", e => {
+            e.preventDefault();
+            jump();
+        });
+
+        const runButton = document.getElementById("run");
+        runButton.addEventListener("pointerdown", e => {
+            e.preventDefault();
+            isRunning = true;
+        });
+        ["pointerup", "pointercancel", "pointerleave"].forEach(event => {
+            runButton.addEventListener(event, () => isRunning = false);
+        });
+
+        document.getElementById("chatinput").addEventListener("keydown", e => {
+            e.stopPropagation();
+            if (e.key === "Escape") {
+                e.preventDefault();
+                toggleChat(false);
+            }
+        });
+    }
+
+    function jump() {
+        if (!playing || jumping)
+            return;
+        jumping = true;
+        verticalSpeed = 7;
+    }
+
+    function toggleChat(open) {
+        chatOpen = open;
+        const chat = document.getElementById("chat");
+        chat.classList.toggle("closed", !open);
+        if (open) {
+            document.exitPointerLock?.();
+            document.getElementById("chatinput").focus();
+        } else {
+            document.getElementById("chatinput").blur();
+        }
+    }
+
+    function addMessage(name, message) {
+        const box = document.getElementById("messages");
+        const row = document.createElement("div");
+        const n = document.createElement("b");
+        const m = document.createElement("span");
+        n.textContent = name + ": ";
+        m.textContent = message;
+        row.append(n, m);
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+        while (box.children.length > 60)
+            box.removeChild(box.firstChild);
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.style.display = "block";
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => toast.style.display = "none", 2500);
+    }
+
+    function updateCount() {
+        document.getElementById("count").textContent = Object.keys(remotePlayers).length + 1;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.05);
+        const now = Date.now();
+
+        if (playing) {
+            const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+            const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+            const dir = new THREE.Vector3();
+
+            if (keys["KeyW"])
+                dir.add(forward);
+            if (keys["KeyS"])
+                dir.sub(forward);
+            if (keys["KeyD"])
+                dir.add(right);
+            if (keys["KeyA"])
+                dir.sub(right);
+
+            if (Math.abs(joystick.x) > 0.08)
+                dir.addScaledVector(right, joystick.x);
+            if (Math.abs(joystick.y) > 0.08)
+                dir.addScaledVector(forward, -joystick.y);
+
+            const moving = dir.length() > 0.05;
+            const running = isRunning || keys["ShiftLeft"] || keys["ShiftRight"];
+            const speed = running ? 11 : 5.5;
+
+            if (moving) {
+                dir.normalize();
+                player.position.addScaledVector(dir, speed * dt);
+                player.rotation.y = Math.atan2(dir.x, dir.z);
+            }
+
+            if (keys["Space"])
+                jump();
+            if (jumping) {
+                player.position.y += verticalSpeed * dt;
+                verticalSpeed -= 18 * dt;
+                if (player.position.y <= 0) {
+                    player.position.y = 0;
+                    jumping = false;
+                    verticalSpeed = 0;
+                }
+            }
+
+            if (moving) {
+                const t = clock.elapsedTime * speed;
+                player.userData.legs[0].rotation.x = Math.sin(t) * 0.65;
+                player.userData.legs[1].rotation.x = -Math.sin(t) * 0.65;
+                player.userData.arms[0].rotation.x = -Math.sin(t) * 0.45;
+                player.userData.arms[1].rotation.x = Math.sin(t) * 0.45;
+            } else {
+                player.userData.legs.forEach(l => l.rotation.x = 0);
+                player.userData.arms.forEach(a => a.rotation.x = 0);
+            }
+
+            const target = player.position.clone().add(new THREE.Vector3(0, 1.7, 0));
+            const distance = 6;
+            const offset = new THREE.Vector3(
+            Math.sin(yaw) * distance,
+            2.5 + pitch * 3,
+            Math.cos(yaw) * distance
+            );
+            camera.position.lerp(target.clone().add(offset), 0.12);
+            camera.lookAt(target);
+
+            if (now - lastMoveSent > 50) {
+                socket.emit("move", {
+                    x: player.position.x,
+                    y: player.position.y,
+                    z: player.position.z,
+                    rotation: player.rotation.y,
+                    moving,
+                    running
+                });
+                lastMoveSent = now;
+            }
+
+            if (player.userData.bubble.visible && now > player.userData.bubbleUntil) {
+                player.userData.bubble.visible = false;
+            }
+        }
+
+        for (const id in remotePlayers) {
+            const r = remotePlayers[id];
+            r.group.position.lerp(r.target, 0.3);
+            if (r.moving) {
+                const remoteSpeed = r.running ? 1.5 : 1;
+                const swing = Math.sin(now * 0.009 * remoteSpeed) * 0.62;
+                r.group.userData.legs[0].rotation.x = swing;
+                r.group.userData.legs[1].rotation.x = -swing;
+                r.group.userData.arms[0].rotation.x = -swing * 0.7;
+                r.group.userData.arms[1].rotation.x = swing * 0.7;
+            } else {
+                r.group.userData.legs.forEach(leg => leg.rotation.x = 0);
+                r.group.userData.arms.forEach(arm => arm.rotation.x = 0);
+            }
+            if (r.bubble.visible && now > r.bubbleUntil) {
+                r.bubble.visible = false;
+            }
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    function resize() {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+    }
+
+    init();
+    </script>
 </body>
 </html>
