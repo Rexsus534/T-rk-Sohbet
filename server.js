@@ -8,9 +8,7 @@ const crypto = require("crypto");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -39,9 +37,16 @@ async function initializeDatabase() {
       id BIGSERIAL PRIMARY KEY,
       username VARCHAR(18) UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      gender VARCHAR(10) NOT NULL DEFAULT 'male',
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS gender VARCHAR(10) NOT NULL DEFAULT 'male'
+  `);
+
   console.log("Veritabanı hazır.");
 }
 
@@ -54,18 +59,29 @@ function validUsername(name) {
     /^[a-zA-Z0-9_]{3,18}$/.test(name);
 }
 
+function validGender(gender) {
+  return gender === "male" || gender === "female";
+}
+
 // KAYIT
 app.post("/api/register", async (req, res) => {
   try {
     const { username, password } = req.body || {};
+    const gender = validGender(req.body?.gender)
+      ? req.body.gender
+      : "male";
 
     if (!validUsername(username)) {
       return res.status(400).json({
-        error: "Kullanıcı adı 3-18 karakter olmalı. Harf, rakam ve _ kullanabilirsin."
+        error: "Kullanıcı adı 3-18 karakter olmalı."
       });
     }
 
-    if (typeof password !== "string" || password.length < 6 || password.length > 72) {
+    if (
+      typeof password !== "string" ||
+      password.length < 6 ||
+      password.length > 72
+    ) {
       return res.status(400).json({
         error: "Şifre en az 6 karakter olmalı."
       });
@@ -74,14 +90,19 @@ app.post("/api/register", async (req, res) => {
     const hash = await bcrypt.hash(password, 12);
 
     await pool.query(
-      "INSERT INTO users (username, password_hash) VALUES ($1, $2)",
-      [username, hash]
+      "INSERT INTO users (username, password_hash, gender) VALUES ($1, $2, $3)",
+      [username, hash, gender]
     );
 
     const token = createToken();
-    sessions.set(token, username);
+    sessions.set(token, { username, gender });
 
-    res.json({ success: true, token, username });
+    res.json({
+      success: true,
+      token,
+      username,
+      gender
+    });
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
@@ -90,7 +111,9 @@ app.post("/api/register", async (req, res) => {
     }
 
     console.error(error);
-    res.status(500).json({ error: "Kayıt oluşturulamadı." });
+    res.status(500).json({
+      error: "Kayıt oluşturulamadı."
+    });
   }
 });
 
@@ -100,11 +123,13 @@ app.post("/api/login", async (req, res) => {
     const { username, password } = req.body || {};
 
     if (!validUsername(username) || typeof password !== "string") {
-      return res.status(400).json({ error: "Bilgileri kontrol et." });
+      return res.status(400).json({
+        error: "Bilgileri kontrol et."
+      });
     }
 
     const result = await pool.query(
-      "SELECT username, password_hash FROM users WHERE LOWER(username) = LOWER($1)",
+      "SELECT username, password_hash, gender FROM users WHERE LOWER(username) = LOWER($1)",
       [username]
     );
 
@@ -115,7 +140,10 @@ app.post("/api/login", async (req, res) => {
     }
 
     const user = result.rows[0];
-    const correct = await bcrypt.compare(password, user.password_hash);
+    const correct = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
 
     if (!correct) {
       return res.status(401).json({
@@ -123,17 +151,27 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
+    const gender = validGender(user.gender)
+      ? user.gender
+      : "male";
+
     const token = createToken();
-    sessions.set(token, user.username);
+    sessions.set(token, {
+      username: user.username,
+      gender
+    });
 
     res.json({
       success: true,
       token,
-      username: user.username
+      username: user.username,
+      gender
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Giriş yapılamadı." });
+    res.status(500).json({
+      error: "Giriş yapılamadı."
+    });
   }
 });
 
@@ -156,13 +194,14 @@ app.get("/api/status", (req, res) => {
 // SOCKET KİMLİK DOĞRULAMA
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
-  const username = sessions.get(token);
+  const session = sessions.get(token);
 
-  if (!username) {
+  if (!session) {
     return next(new Error("Giriş yapmalısın."));
   }
 
-  socket.username = username;
+  socket.username = session.username;
+  socket.gender = session.gender;
   next();
 });
 
@@ -180,10 +219,13 @@ io.on("connection", (socket) => {
   players[socket.id] = {
     id: socket.id,
     name: socket.username,
+    gender: socket.gender,
     x: 0,
     y: 0,
     z: 0,
-    rotation: 0
+    rotation: 0,
+    moving: false,
+    running: false
   };
 
   socket.emit("welcome", {
@@ -193,8 +235,10 @@ io.on("connection", (socket) => {
 
   socket.broadcast.emit("playerJoined", players[socket.id]);
 
+  // HAREKET SENKRONİZASYONU
   socket.on("move", (data) => {
-    if (!players[socket.id] || !data) return;
+    const current = players[socket.id];
+    if (!current || !data) return;
 
     const values = [
       Number(data.x),
@@ -207,16 +251,22 @@ io.on("connection", (socket) => {
 
     const [x, y, z, rotation] = values;
 
-    players[socket.id].x = Math.max(-500, Math.min(500, x));
-    players[socket.id].y = Math.max(-50, Math.min(100, y));
-    players[socket.id].z = Math.max(-500, Math.min(500, z));
-    players[socket.id].rotation = rotation;
+    current.x = Math.max(-500, Math.min(500, x));
+    current.y = Math.max(-50, Math.min(100, y));
+    current.z = Math.max(-500, Math.min(500, z));
+    current.rotation = rotation;
+    current.moving = data.moving === true;
+    current.running = data.running === true;
 
-    socket.broadcast.emit("playerMoved", players[socket.id]);
+    socket.broadcast.emit("playerMoved", current);
   });
 
+  // SOHBET
   socket.on("chat", (message) => {
-    if (!players[socket.id] || typeof message !== "string") return;
+    if (
+      !players[socket.id] ||
+      typeof message !== "string"
+    ) return;
 
     const clean = message.trim().slice(0, 250);
     if (!clean) return;
@@ -229,6 +279,7 @@ io.on("connection", (socket) => {
     });
   });
 
+  // ÇIKIŞ
   socket.on("disconnect", () => {
     if (!players[socket.id]) return;
 
